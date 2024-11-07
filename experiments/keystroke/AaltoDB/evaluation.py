@@ -58,18 +58,19 @@ def evaluate_with_random_input():
     # ランダム入力の生成
     random_input = torch.randn(batch_size, seq_length, feature_dim)
     
-    print(f"\nランダム入力の形状: {random_input.shape}")
+    print(f"\nランダム入力の形: {random_input.shape}")
     
     # no_gradを使用して推論
     with torch.no_grad():
         try:
             output = model(random_input)
-            print(f"出力の形状: {output.shape}")
+            print(f"出力の形: {output.shape}")
             print(f"出力サンプル:\n{output}")
         except Exception as e:
             print(f"実行時エラー: {str(e)}")
 
-# 运行评估
 evaluate_with_random_input()
 
+# ランダム入力の形: torch.Size([1, 50, 10])
+# 出力の形: torch.Size([1, 64])
 
