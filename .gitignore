@@ -32,3 +32,4 @@ venv.bak/
 # Training instances
 checkpoints
 best_models
+experiments/keystroke/AaltoDB/model1.pt
