@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+import onnx
+import onnxruntime
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -101,8 +104,6 @@ def convert_to_onnx():
         print(f"変換中にエラーが発生しました: {str(e)}")
 
 def verify_onnx_model():
-    import onnx
-    import onnxruntime
     
     try:
         # ONNXモデルの基本的な検証

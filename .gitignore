@@ -33,3 +33,4 @@ venv.bak/
 checkpoints
 best_models
 experiments/keystroke/AaltoDB/model1.pt
+experiments/keystroke/AaltoDB/model.onnx
