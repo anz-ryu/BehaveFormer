@@ -80,9 +80,27 @@ class OnnxModelLoader(
             // 結果の処理
             output?.get(0)?.let { tensor ->
                 when (val value = tensor.value) {
-                    is FloatArray -> Log.d("OnnxModelLoader", "推論結果: ${value.contentToString()}")
-                    is Array<*> -> Log.d("OnnxModelLoader", "推論結果: ${value.contentToString()}")
-                    else -> Log.d("OnnxModelLoader", "推論結果: $value")
+                    is FloatArray -> {
+                        Log.d("OnnxModelLoader", "推論結果 (FloatArray): ${value.contentToString()}")
+                    }
+                    is Array<*> -> {
+                        // 多次元配列の場合の処理
+                        val result = StringBuilder("推論結果:\n")
+                        when {
+                            value.isArrayOf<FloatArray>() -> {
+                                (value as Array<FloatArray>).forEachIndexed { i, arr ->
+                                    result.append("[$i]: ${arr.contentToString()}\n")
+                                }
+                            }
+                            value.isArrayOf<Array<*>>() -> {
+                                (value as Array<Array<*>>).forEachIndexed { i, arr ->
+                                    result.append("[$i]: ${arr.contentDeepToString()}\n")
+                                }
+                            }
+                        }
+                        Log.d("OnnxModelLoader", result.toString())
+                    }
+                    else -> Log.d("OnnxModelLoader", "推論結果 (その他): $value")
                 }
             }
             
