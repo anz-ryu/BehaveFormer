@@ -5,9 +5,12 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.content.Context
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.random.Random
+import java.nio.FloatBuffer
 
 class OnnxModelLoader(
     private val context: Context,
@@ -56,6 +59,37 @@ class OnnxModelLoader(
             }
         }
         return file.absolutePath
+    }
+
+    fun test() {
+        try {
+            // テスト用の入力データを作成 (1, 50, 10)の形状
+            val inputSize = 1 * 50 * 10
+            val inputData = FloatArray(inputSize) { Random.nextFloat() }
+            
+            // FloatBufferを使用して入力テンソルを作成
+            val inputTensor = OnnxTensor.createTensor(
+                OrtEnvironment.getEnvironment(),
+                FloatBuffer.wrap(inputData),
+                longArrayOf(1L, 50L, 10L)
+            )
+
+            // 推論実行
+            val output = session?.run(mapOf("input" to inputTensor))
+            
+            // 結果の処理
+            output?.get(0)?.let { tensor ->
+                when (val value = tensor.value) {
+                    is FloatArray -> Log.d("OnnxModelLoader", "推論結果: ${value.contentToString()}")
+                    is Array<*> -> Log.d("OnnxModelLoader", "推論結果: ${value.contentToString()}")
+                    else -> Log.d("OnnxModelLoader", "推論結果: $value")
+                }
+            }
+            
+            Log.d("OnnxModelLoader", "テスト実行が成功しました")
+        } catch (e: Exception) {
+            Log.e("OnnxModelLoader", "テスト実行中にエラーが発生しました: ${e.message}", e)
+        }
     }
 
     fun close() {

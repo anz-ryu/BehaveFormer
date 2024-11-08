@@ -34,3 +34,4 @@ checkpoints
 best_models
 experiments/keystroke/AaltoDB/model1.pt
 experiments/keystroke/AaltoDB/model.onnx
+android/app/src/main/assets/model.onnx
