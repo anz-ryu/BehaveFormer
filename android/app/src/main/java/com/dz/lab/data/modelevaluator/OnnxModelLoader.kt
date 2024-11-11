@@ -25,13 +25,14 @@ class OnnxModelLoader(
         session = env?.createSession(modelPath)
     }
 
-    fun evaluate(input: FloatArray): FloatArray {
+    fun evaluate(input: FloatArray, shape: LongArray): FloatArray {
         session?.let { session ->
             try {
                 // 入力テンソルを作成
                 val inputTensor = OnnxTensor.createTensor(
                     OrtEnvironment.getEnvironment(),
-                    arrayOf(input)
+                    FloatBuffer.wrap(input),
+                    shape
                 )
 
                 // 推論を実行
@@ -61,17 +62,23 @@ class OnnxModelLoader(
         return file.absolutePath
     }
 
-    fun test() {
+    fun test(shape: LongArray) {
         try {
             // テスト用の入力データを作成 (1, 50, 10)の形状
-            val inputSize = 1 * 50 * 10
+            val inputSize = shape.iterator().let { t ->
+                var rt = 1
+                while (t.hasNext()) {
+                    rt *= t.next().toInt()
+                }
+                rt
+            }
             val inputData = FloatArray(inputSize) { Random.nextFloat() }
             
             // FloatBufferを使用して入力テンソルを作成
             val inputTensor = OnnxTensor.createTensor(
                 OrtEnvironment.getEnvironment(),
                 FloatBuffer.wrap(inputData),
-                longArrayOf(1L, 50L, 10L)
+                shape
             )
 
             // 推論実行

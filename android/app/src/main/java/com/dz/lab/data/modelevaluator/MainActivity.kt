@@ -30,7 +30,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.fab.setOnClickListener { view ->
             val model = OnnxModelLoader(this, "model.onnx")
-            model.test()
+            model.test( longArrayOf(1, 50, 10) )
+            model.close()
         }
     }
 
