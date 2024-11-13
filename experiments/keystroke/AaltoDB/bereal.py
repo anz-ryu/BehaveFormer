@@ -7,7 +7,7 @@ def filter_keystrokes(file_path: str, target_section_id: int):
 
 def main():
     file_path = 'keystrokes.csv'
-    target_section_id = 43
+    target_section_id = 30
     
     output_file = f'keystrokes_section_{target_section_id}.csv'
     

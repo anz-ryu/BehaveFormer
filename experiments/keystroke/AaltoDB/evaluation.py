@@ -229,15 +229,20 @@ def evaluate_with_real_data():
 print("実データでのテストを開始します...")
 evaluate_with_real_data()
 
-def compare_sections_with_onnx():
-    """ONNXモデルを使用して2つのセクションを比較"""
+def compare_sections_with_onnx(section_id1, section_id2):
+    """ONNXモデルを使用して2つのセクションを比較
+    
+    Args:
+        section_id1 (int): 比較する1つ目のセクションID
+        section_id2 (int): 比較する2つ目のセクションID
+    """
     try:
         # ONNXランタイムセッションの作成
         ort_session = onnxruntime.InferenceSession("model.onnx")
         input_name = ort_session.get_inputs()[0].name
         
         results = {}
-        for section_id in [42, 43]:
+        for section_id in [section_id1, section_id2]:  # 42, 43を変数に置き換え
             # セクションデータを読み込む
             file_path = f'keystrokes_section_{section_id}.csv'
             df = pd.read_csv(file_path, 
@@ -287,9 +292,9 @@ def compare_sections_with_onnx():
         # ユークリッド距離を計算
         if len(results) == 2:
             distance = np.sqrt(np.sum(
-                (results[42] - results[43]) ** 2
+                (results[section_id1] - results[section_id2]) ** 2  # 42, 43を変数に置き換え
             ))
-            print(f"\n2つのセクション間のユークリッド距離: {distance}")
+            print(f"\n2つのセクション（{section_id1}と{section_id2}）間のユークリッド距離: {distance}")
             
     except Exception as e:
         print(f"エラーが発生しました: {str(e)}")
@@ -304,6 +309,6 @@ if __name__ == "__main__":
     print("\nONNXモデルの検証を開始します...")
     verify_onnx_model()
     
-    # セクションの比較
+    # セクションの比較（例として42と43を使用）
     print("\nセクションの比較を開始します...")
-    compare_sections_with_onnx()
+    compare_sections_with_onnx(43, 30)
