@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -227,3 +229,81 @@ def evaluate_with_real_data():
 print("実データでのテストを開始します...")
 evaluate_with_real_data()
 
+def compare_sections_with_onnx():
+    """ONNXモデルを使用して2つのセクションを比較"""
+    try:
+        # ONNXランタイムセッションの作成
+        ort_session = onnxruntime.InferenceSession("model.onnx")
+        input_name = ort_session.get_inputs()[0].name
+        
+        results = {}
+        for section_id in [42, 43]:
+            # セクションデータを読み込む
+            file_path = f'keystrokes_section_{section_id}.csv'
+            df = pd.read_csv(file_path, 
+                           names=['KEYSTROKE_ID', 'PRESS_TIME', 'RELEASE_TIME', 'LETTER', 
+                                 'TEST_SECTION_ID', 'KEYCODE', 'IKI'])
+            
+            # データの前処理
+            base_time = df['PRESS_TIME'].min()
+            df['PRESS_TIME'] = (df['PRESS_TIME'] - base_time) / 1000.0
+            df['RELEASE_TIME'] = (df['RELEASE_TIME'] - base_time) / 1000.0
+            df['KEYCODE'] = df['KEYCODE'] / 255.0
+            
+            # モデル入力用のデータを作成 (10次元の特徴量)
+            input_data = []
+            for i in range(min(50, len(df))):  # 最大50タイムステップ
+                row = df.iloc[i]
+                feature = [
+                    row['PRESS_TIME'],          # 1. プレス時間
+                    row['RELEASE_TIME'],        # 2. リリース時間
+                    row['RELEASE_TIME'] - row['PRESS_TIME'],  # 3. ホールド時間
+                    row['KEYCODE'],             # 4. キーコード
+                    df.iloc[i+1]['PRESS_TIME'] - row['RELEASE_TIME'] if i < len(df)-1 else 0.0,  # 5. フライト時間
+                    df.iloc[i+1]['PRESS_TIME'] - row['PRESS_TIME'] if i < len(df)-1 else 0.0,    # 6. プレス間隔
+                    df.iloc[i+1]['RELEASE_TIME'] - row['RELEASE_TIME'] if i < len(df)-1 else 0.0, # 7. リリース間隔
+                    df.iloc[i+1]['RELEASE_TIME'] - row['PRESS_TIME'] if i < len(df)-1 else 0.0,   # 8. プレス-リリース間隔
+                    df.iloc[i+1]['KEYCODE'] if i < len(df)-1 else 0.0,  # 9. 次のキーコード
+                    float(i) / 50.0  # 10. 正規化された位置情報
+                ]
+                input_data.append(feature)
+            
+            # 50タイムステップに満たない場合は0パディング
+            while len(input_data) < 50:
+                input_data.append([0.0] * 10)
+            
+            # 入力テンソルの形状を (1, 50, 10) に設定
+            input_tensor = np.array([input_data], dtype=np.float32)
+            
+            # ONNXモデルで推論実行
+            ort_inputs = {input_name: input_tensor}
+            ort_output = ort_session.run(None, ort_inputs)
+            results[section_id] = ort_output[0]
+            
+            print(f"\nセクション{section_id}の入力形状: {input_tensor.shape}")
+            print(f"セクション{section_id}の出力形状: {ort_output[0].shape}")
+            print(f"出力サンプル:\n{ort_output[0][:5]}")
+        
+        # ユークリッド距離を計算
+        if len(results) == 2:
+            distance = np.sqrt(np.sum(
+                (results[42] - results[43]) ** 2
+            ))
+            print(f"\n2つのセクション間のユークリッド距離: {distance}")
+            
+    except Exception as e:
+        print(f"エラーが発生しました: {str(e)}")
+
+# メイン処理の実行
+if __name__ == "__main__":
+    # まずONNXに変換
+    print("ONNXへの変換を開始します...")
+    convert_to_onnx()
+    
+    # 変換されたモデルを検証
+    print("\nONNXモデルの検証を開始します...")
+    verify_onnx_model()
+    
+    # セクションの比較
+    print("\nセクションの比較を開始します...")
+    compare_sections_with_onnx()
